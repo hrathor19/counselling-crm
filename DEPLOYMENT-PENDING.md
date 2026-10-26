@@ -20,6 +20,36 @@ cause and is still unfixed.
 
 ## 1. What is waiting to go out
 
+*Call Analysis shipped to the OLD server (13.206.157.201) on 2026-10-26 as
+`24ea508`. **The new server, calling-crm.kollegeapply.com, still has none of
+it** — see §1a for exactly what that box needs.*
+
+## 1a. Call Analysis — SHIPPED to the old server 2026-10-26 (`24ea508`)
+
+Deployed cleanly. DDL first, then code, as below. Afterwards: pm2 `crm` online
+with one restart, a fresh BUILD_ID, the generated Prisma client carrying the
+new fields, and **zero new error-log lines from real traffic** (101,492 before
+and after; the single line added was my own probe of the unconfigured
+webhook). `pg_dump` taken first to `~/backups/pre-call-analysis-20261026-081114.sql.gz`,
+36 MB, verified with `gunzip -t`.
+
+**`CALL_ANALYSIS_WEBHOOK_SECRET` is still NOT set on the old server**, so the
+webhook answers 503 and the analyser cannot deliver yet. That is the one
+remaining step there.
+
+One deviation worth repeating on the new server: `CallLog` is 127k rows /
+284 MB, so the phone-tail index was built **`CREATE INDEX CONCURRENTLY`** by
+hand rather than with the plain form in the migration file. A plain
+`CREATE INDEX` takes ACCESS EXCLUSIVE and would stall the dialer webhook and
+every call-history read while it builds. The migration file keeps the plain
+`IF NOT EXISTS` form because Prisma wraps migrations in a transaction and
+`CONCURRENTLY` cannot run inside one — it is a no-op on a box where the
+index already exists. After a concurrent build, **check `indisvalid`**: a
+failed concurrent build leaves an invalid index behind that the planner
+ignores.
+
+### What the new server still needs
+
 ### Call Analysis — QA scores for recorded calls  *(DDL FIRST, then code)*
 
 Built 2026-10-26, **not deployed, not committed.** The analyser posts a verdict
