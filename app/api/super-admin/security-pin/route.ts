@@ -4,7 +4,7 @@ import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { logActivity } from '@/lib/permissions';
+import { logActivity, isRootLevel } from '@/lib/permissions';
 import { hashPin, isValidPinFormat } from '@/lib/security-pin';
 
 // Self-service Security PIN management for the logged-in Super Admin's own
@@ -13,7 +13,7 @@ import { hashPin, isValidPinFormat } from '@/lib/security-pin';
 // configured (proves continuity — a stolen session alone can't rotate it).
 export async function GET() {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== 'SUPER_ADMIN') {
+  if (!session || !isRootLevel(session.user.role)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -37,7 +37,7 @@ const schema = z.object({
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== 'SUPER_ADMIN') {
+    if (!session || !isRootLevel(session.user.role)) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 

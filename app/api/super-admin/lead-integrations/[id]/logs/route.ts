@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { z } from 'zod';
 import { authOptions } from '@/lib/auth';
+import { isRootLevel } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 import { isActionUnlocked } from '@/lib/security-pin';
 import { PIN_GATED_ACTIONS } from '@/lib/pin-gated-actions';
@@ -16,7 +17,7 @@ const querySchema = z.object({
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== 'SUPER_ADMIN') {
+    if (!session || !isRootLevel(session.user.role)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     if (!(await isActionUnlocked(session.user.id, PIN_GATED_ACTIONS.LEAD_INTEGRATIONS))) {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { z } from 'zod';
 import { authOptions } from '@/lib/auth';
+import { isRootLevel } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 import { HEX_COLOR_RE, DEFAULT_CATEGORY_COLOR } from '@/lib/feedback-category-colors';
 
@@ -14,7 +15,7 @@ export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const showAll = session.user.role === 'SUPER_ADMIN' &&
+  const showAll = isRootLevel(session.user.role) &&
     new URL(req.url).searchParams.get('all') === '1';
 
   try {
@@ -34,7 +35,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== 'SUPER_ADMIN') {
+  if (!session || !isRootLevel(session.user.role)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 

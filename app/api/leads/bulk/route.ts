@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { z } from 'zod';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { hasPermission } from '@/lib/permissions';
+import { hasPermission, isRootLevel } from '@/lib/permissions';
 import { Feature } from '@prisma/client';
 
 const bulkApproveSchema = z.object({
@@ -38,12 +38,12 @@ export async function POST(req: NextRequest) {
   }
 
   if (action === 'DELETE') {
-    if (!['SUPER_ADMIN', 'REPORTS'].includes(session.user.role)) {
+    if (!['SUPER_ADMIN', 'ROOT_USER', 'REPORTS'].includes(session.user.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const where =
-      session.user.role === 'SUPER_ADMIN'
+      isRootLevel(session.user.role)
         ? { id: { in: leadIds } }
         : { id: { in: leadIds }, status: 'DISAPPROVED' as const };
 

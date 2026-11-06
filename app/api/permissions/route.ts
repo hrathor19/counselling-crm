@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { z } from 'zod';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { getAllPermissions } from '@/lib/permissions';
+import { getAllPermissions, isRootLevel } from '@/lib/permissions';
 import { Feature, Role } from '@prisma/client';
 import { isActionUnlocked } from '@/lib/security-pin';
 import { PIN_GATED_ACTIONS } from '@/lib/pin-gated-actions';
@@ -17,7 +17,7 @@ const updatePermissionSchema = z.object({
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== 'SUPER_ADMIN') {
+    if (!session || !isRootLevel(session.user.role)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     if (!(await isActionUnlocked(session.user.id, PIN_GATED_ACTIONS.MANAGE_PERMISSIONS))) {
@@ -35,7 +35,7 @@ export async function GET() {
 export async function PATCH(req: NextRequest) {
   try {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== 'SUPER_ADMIN') {
+  if (!session || !isRootLevel(session.user.role)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
   if (!(await isActionUnlocked(session.user.id, PIN_GATED_ACTIONS.MANAGE_PERMISSIONS))) {
@@ -51,17 +51,18 @@ export async function PATCH(req: NextRequest) {
   const { role, feature, canAccess } = parsed.data;
 
   /**
-   * Super Admin keeps every permission except masking, which is theirs to set.
+   * Super Admin and Root User keep every permission except masking, which is
+   * theirs to set.
    *
-   * Masking only hides lead contact details; it cannot hide this page, so a
-   * Super Admin who masks themselves can always come back and unmask. Every
+   * Masking only hides lead contact details; it cannot hide this page, so
+   * masking yourself can always be undone by coming back and unmasking. Every
    * OTHER feature stays locked, and that is the part that matters — letting
-   * Super Admin revoke, say, their own MANAGE_PERMISSIONS would be a genuine
+   * either role revoke, say, their own MANAGE_PERMISSIONS would be a genuine
    * lockout with no way back through the UI.
    */
-  if (role === Role.SUPER_ADMIN && feature !== Feature.MASK_UNMASK_DATA) {
+  if (isRootLevel(role) && feature !== Feature.MASK_UNMASK_DATA) {
     return NextResponse.json(
-      { error: 'Super Admin keeps every permission except Mask Data' },
+      { error: 'Super Admin and Root User keep every permission except Mask Data' },
       { status: 400 },
     );
   }

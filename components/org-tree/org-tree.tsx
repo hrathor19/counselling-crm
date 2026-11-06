@@ -77,6 +77,14 @@ const ROLE_META = {
     avatarBg: 'bg-violet-600', chipBg: 'bg-violet-500/10',
     cardBg: 'bg-violet-500/10', cardBorder: 'border-violet-500/30',
   },
+  // Same access level as Super Admin (lib/permissions.ts isRootLevel()); kept
+  // visually distinct here only so the org chart still tells the two apart.
+  ROOT_USER: {
+    label: 'Root User', icon: Shield,
+    bg: 'bg-fuchsia-500/15', text: 'text-fuchsia-400', border: 'border-fuchsia-500/30',
+    avatarBg: 'bg-fuchsia-600', chipBg: 'bg-fuchsia-500/10',
+    cardBg: 'bg-fuchsia-500/10', cardBorder: 'border-fuchsia-500/30',
+  },
   REPORTS: {
     label: 'Reports', icon: BarChart2,
     bg: 'bg-blue-500/15', text: 'text-blue-400', border: 'border-blue-500/30',
@@ -132,7 +140,10 @@ function RootNode({
   user: OrgUser;
   onClick?: (u: OrgUser) => void;
 }) {
-  const meta = ROLE_META.SUPER_ADMIN;
+  // The fetched root is whichever admin-tier account exists — see
+  // /api/users/hierarchy, which looks up SUPER_ADMIN or ROOT_USER. Falls back
+  // to the Super Admin styling for a role this tree doesn't otherwise know.
+  const meta = ROLE_META[(user.role as RoleKey) ?? 'SUPER_ADMIN'] ?? ROLE_META.SUPER_ADMIN;
   const initials = user.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2);
 
   return (

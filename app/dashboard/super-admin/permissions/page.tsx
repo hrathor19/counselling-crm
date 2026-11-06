@@ -11,6 +11,10 @@ import { PIN_GATED_ACTIONS } from '@/lib/pin-gated-actions';
 
 const ROLES = [
   { key: 'SUPER_ADMIN', label: 'Super Admin' },
+  // Same access level as Super Admin everywhere in the app (see
+  // lib/permissions.ts isRootLevel()) — its own role only so this grid can
+  // hold a Mask Data setting for it independent of Super Admin's.
+  { key: 'ROOT_USER', label: 'Root User' },
   { key: 'REPORTS', label: 'Reports' },
   { key: 'OPERATIONS', label: 'Operations' },
   { key: 'COUNSELLING_TL', label: 'Counselling TL' },
@@ -81,16 +85,16 @@ function PermissionsContent() {
   });
 
   /**
-   * Super Admin keeps every permission except Mask Data.
+   * Super Admin and Root User keep every permission except Mask Data.
    *
    * Masking only hides lead contact details — it cannot hide this page, so the
    * switch is always reachable to turn back off. Every other feature stays
-   * locked: a Super Admin revoking their own Manage Permissions would be a
-   * real lockout with no route back through the UI. The server enforces the
-   * same rule, so this is a disabled control rather than the whole guard.
+   * locked: revoking your own Manage Permissions would be a real lockout with
+   * no route back through the UI. The server enforces the same rule, so this
+   * is a disabled control rather than the whole guard.
    */
   const isLockedCell = (role: RoleKey, feature: FeatureKey) =>
-    role === 'SUPER_ADMIN' && feature !== 'MASK_UNMASK_DATA';
+    (role === 'SUPER_ADMIN' || role === 'ROOT_USER') && feature !== 'MASK_UNMASK_DATA';
 
   const handleToggle = (role: RoleKey, feature: FeatureKey, current: boolean) => {
     if (isLockedCell(role, feature)) return;
@@ -103,7 +107,7 @@ function PermissionsContent() {
         <CardHeader>
           <CardTitle>Permission Matrix</CardTitle>
           <CardDescription>
-            Toggle feature access for each role. Super Admin permissions are locked and cannot be changed.
+            Toggle feature access for each role. Super Admin and Root User permissions are locked except Mask Data.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -123,7 +127,7 @@ function PermissionsContent() {
                       <th key={role.key} className="py-3 px-4 text-center font-semibold">
                         <div className="flex flex-col items-center gap-1">
                           <span>{role.label}</span>
-                          {role.key === 'SUPER_ADMIN' && (
+                          {(role.key === 'SUPER_ADMIN' || role.key === 'ROOT_USER') && (
                             // "except Mask Data", not "Locked": the column is no
                             // longer uniformly locked, and a badge that says it
                             // is would contradict the switch beside it.

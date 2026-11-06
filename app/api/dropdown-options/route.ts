@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { z } from 'zod';
 import { authOptions } from '@/lib/auth';
+import { isRootLevel } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 import { COLLEGE_ZONES, COLLEGE_DEAL_TYPES, COLLEGE_CLIENT_TYPES } from '@/lib/college-attributes';
 import { collegeSessionConflict } from '@/lib/college-session';
@@ -58,7 +59,7 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const typeParam = searchParams.get('type');
-  const showAll   = session.user.role === 'SUPER_ADMIN' && searchParams.get('all') === '1';
+  const showAll   = isRootLevel(session.user.role) && searchParams.get('all') === '1';
 
   if (typeParam && !VALID_TYPES.includes(typeParam as DropdownType)) {
     return NextResponse.json({ error: 'Invalid type' }, { status: 400 });
@@ -82,7 +83,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== 'SUPER_ADMIN') {
+  if (!session || !isRootLevel(session.user.role)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 

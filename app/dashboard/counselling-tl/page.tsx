@@ -186,10 +186,15 @@ function AgentMultiSelect({
   agents,
   selected,
   onChange,
+  placeholder = 'All Counsellors',
 }: {
   agents: { id: string; name: string }[];
   selected: string[];
   onChange: (ids: string[]) => void;
+  // Lets this same picker double as the Counselling TL filter — the markup
+  // and behaviour (search, clear, single-selection label) are identical,
+  // only the empty-state text differs between "counsellor" and "TL".
+  placeholder?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState('');
@@ -211,7 +216,7 @@ function AgentMultiSelect({
 
   const label =
     selected.length === 0
-      ? 'All Counsellors'
+      ? placeholder
       : selected.length === 1
         ? (agents.find((a) => a.id === selected[0])?.name ?? '1 selected')
         : `${selected.length} selected`;
@@ -732,12 +737,18 @@ const FILTER_GROUPS: { group: string; filters: FilterDef[] }[] = [
   {
     group: 'Assignment',
     filters: [
+      // 'tl' is hidden from the dialog for a role that only ever sees its own
+      // team (COUNSELLING_TL) — see showTlPicker below. SUPER_ADMIN and
+      // REPORTS see every team, so filtering by TL narrows who a lead is
+      // currently assigned under before picking a Counsellor.
+      { key: 'tl',    label: 'Counselling TL' },
       { key: 'agent', label: 'Counsellor' },
     ],
   },
   {
     group: 'Other',
     filters: [
+      { key: 'leadConfirmation', label: 'Lead Confirmation' },
       { key: 'feedback',  label: 'Last Feedback'    },
       { key: 'createdAt', label: 'Date Added Range' },
       { key: 'updatedAt', label: 'Updated Date Range' },
@@ -806,12 +817,18 @@ export default function CounsellingTLPage() {
   const [dataCallingTypeFilters, setDataCallingTypeFilters] = useState<string[]>([]);
   const [clientTypeFilters, setClientTypeFilters] = useState<string[]>([]);
   const [zoneFilters,       setZoneFilters]       = useState<string[]>([]);
+  const [leadConfirmationFilters, setLeadConfirmationFilters] = useState<string[]>([]);
   const [feedbackFilter,    setFeedbackFilter]    = useState<string[]>([]);
   const [dateFrom,          setDateFrom]          = useState('');
   const [dateTo,            setDateTo]            = useState('');
   const [updatedFrom,       setUpdatedFrom]       = useState('');
   const [updatedTo,         setUpdatedTo]         = useState('');
   const [agentFilters,      setAgentFilters]      = useState<string[]>([]);
+  // Narrows by which TL a lead's assignee currently reports to. Meaningful
+  // only for SUPER_ADMIN/REPORTS (showTlPicker) — a COUNSELLING_TL is already
+  // scoped server-side to their own team, so the dialog hides this entry for
+  // them rather than offering a filter that can only ever match everything.
+  const [tlFilters,         setTlFilters]         = useState<string[]>([]);
   const [filterDialogOpen,  setFilterDialogOpen]  = useState(false);
   const [dialogFilters,     setDialogFilters]     = useState<string[]>([]);
   const [selectedFilters,   setSelectedFilters]   = useState<string[]>([]);
@@ -845,7 +862,7 @@ export default function CounsellingTLPage() {
     setSelectedIds([]);
     setAllFilteredSelected(false);
     lastClickedIdxRef.current = -1;
-  }, [search, assignmentFilter, cityFilters, stateFilters, campaignFilters, courseFilters, collegeFilters, leadTypeFilters, leadOriginFilters, zoneFilters, dataCallingTypeFilters, clientTypeFilters, agentFilters, feedbackFilter, dateFrom, dateTo, updatedFrom, updatedTo, limit]);
+  }, [search, assignmentFilter, cityFilters, stateFilters, campaignFilters, courseFilters, collegeFilters, leadTypeFilters, leadOriginFilters, zoneFilters, dataCallingTypeFilters, clientTypeFilters, agentFilters, tlFilters, leadConfirmationFilters, feedbackFilter, dateFrom, dateTo, updatedFrom, updatedTo, limit]);
 
   // ── Data queries ──────────────────────────────────────────────────────────────
 
@@ -856,7 +873,7 @@ export default function CounsellingTLPage() {
   });
 
   const { data, isLoading, isFetching, refetch } = useQuery({
-    queryKey: ['tl-leads', { search, assignmentFilter, cityFilters, stateFilters, campaignFilters, courseFilters, collegeFilters, leadTypeFilters, leadOriginFilters, zoneFilters, dataCallingTypeFilters, clientTypeFilters, agentFilters, feedbackFilter, dateFrom, dateTo, updatedFrom, updatedTo, page, limit }],
+    queryKey: ['tl-leads', { search, assignmentFilter, cityFilters, stateFilters, campaignFilters, courseFilters, collegeFilters, leadTypeFilters, leadOriginFilters, zoneFilters, dataCallingTypeFilters, clientTypeFilters, agentFilters, tlFilters, leadConfirmationFilters, feedbackFilter, dateFrom, dateTo, updatedFrom, updatedTo, page, limit }],
     queryFn: () => {
       const p = new URLSearchParams({ page: String(page), limit: String(limit), status: 'APPROVED' });
       if (search) p.set('search', search);
@@ -875,6 +892,8 @@ export default function CounsellingTLPage() {
       if (clientTypeFilters.length > 0) p.set('clientType', joinCsvFilterValues(clientTypeFilters));
       if (zoneFilters.length > 0)       p.set('zone',         joinCsvFilterValues(zoneFilters));
       if (agentFilters.length > 0)      p.set('assignedToId', agentFilters.join(','));
+      if (tlFilters.length > 0)         p.set('tlId',         tlFilters.join(','));
+      if (leadConfirmationFilters.length > 0) p.set('leadConfirmation', joinCsvFilterValues(leadConfirmationFilters));
       if (feedbackFilter.includes('__fresh__') && feedbackFilter.length === 1) {
         p.set('feedbackTab', 'fresh');
       } else {
@@ -900,7 +919,7 @@ export default function CounsellingTLPage() {
   // REPORTS has no team of its own (getLeadWhereClause gives it global
   // visibility, same as SUPER_ADMIN), so it needs the TL-then-agent picker
   // rather than the implicit "my team" behavior COUNSELLING_TL gets.
-  const showTlPicker = session?.user?.role === 'SUPER_ADMIN' || session?.user?.role === 'REPORTS';
+  const showTlPicker = session?.user?.role === 'SUPER_ADMIN' || session?.user?.role === 'ROOT_USER' || session?.user?.role === 'REPORTS';
 
   const { data: tlsList = [] } = useQuery<{ id: string; name: string }[]>({
     queryKey: ['all-tls-for-assign'],
@@ -966,6 +985,7 @@ export default function CounsellingTLPage() {
     dataCallingTypeFilters.forEach((v) => chips.push({ key: `dct-${v}`, label: `Calling Type: ${v}`, onRemove: () => setDataCallingTypeFilters((p) => p.filter((x) => x !== v)) }));
     clientTypeFilters.forEach((v) => chips.push({ key: `ct-${v}`, label: `Client Type: ${v}`, onRemove: () => setClientTypeFilters((p) => p.filter((x) => x !== v)) }));
     zoneFilters.forEach((v)       => chips.push({ key: `zone-${v}`,        label: `Zone: ${v}`,        onRemove: () => setZoneFilters((p)       => p.filter((x) => x !== v)) }));
+    leadConfirmationFilters.forEach((v) => chips.push({ key: `lc-${v}`, label: `Confirmation: ${v}`, onRemove: () => setLeadConfirmationFilters((p) => p.filter((x) => x !== v)) }));
     feedbackFilter.forEach((v) => {
       const fbLabel = v === '__fresh__'
         ? 'Fresh'
@@ -984,8 +1004,16 @@ export default function CounsellingTLPage() {
         onRemove: () => setAgentFilters((prev) => prev.filter((i) => i !== id)),
       });
     });
+    tlFilters.forEach((id) => {
+      const tl = tlsList.find((t) => t.id === id);
+      if (tl) chips.push({
+        key: `tl-${id}`,
+        label: `TL: ${tl.name}`,
+        onRemove: () => setTlFilters((prev) => prev.filter((i) => i !== id)),
+      });
+    });
     return chips;
-  }, [assignmentFilter, cityFilters, stateFilters, campaignFilters, courseFilters, collegeFilters, leadTypeFilters, leadOriginFilters, zoneFilters, dataCallingTypeFilters, clientTypeFilters, feedbackFilter, feedbackOptions, dateFrom, dateTo, updatedFrom, updatedTo, agentFilters, agents]);
+  }, [assignmentFilter, cityFilters, stateFilters, campaignFilters, courseFilters, collegeFilters, leadTypeFilters, leadOriginFilters, zoneFilters, dataCallingTypeFilters, clientTypeFilters, leadConfirmationFilters, feedbackFilter, feedbackOptions, dateFrom, dateTo, updatedFrom, updatedTo, agentFilters, agents, tlFilters, tlsList]);
 
   function clearAllFilters() {
     setAssignmentFilter('all');
@@ -999,12 +1027,14 @@ export default function CounsellingTLPage() {
     setDataCallingTypeFilters([]);
     setClientTypeFilters([]);
     setZoneFilters([]);
+    setLeadConfirmationFilters([]);
     setFeedbackFilter([]);
     setDateFrom('');
     setDateTo('');
     setUpdatedFrom('');
     setUpdatedTo('');
     setAgentFilters([]);
+    setTlFilters([]);
     setSelectedFilters([]);
     setDialogFilters([]);
   }
@@ -1068,6 +1098,8 @@ export default function CounsellingTLPage() {
     if (clientTypeFilters.length > 0) p.set('clientType', joinCsvFilterValues(clientTypeFilters));
     if (zoneFilters.length > 0)       p.set('zone',         joinCsvFilterValues(zoneFilters));
     if (agentFilters.length > 0)      p.set('assignedToId', agentFilters.join(','));
+    if (tlFilters.length > 0)         p.set('tlId',         tlFilters.join(','));
+    if (leadConfirmationFilters.length > 0) p.set('leadConfirmation', joinCsvFilterValues(leadConfirmationFilters));
     if (feedbackFilter.includes('__fresh__') && feedbackFilter.length === 1) {
       p.set('feedbackTab', 'fresh');
     } else {
@@ -1334,10 +1366,26 @@ export default function CounsellingTLPage() {
                   <MultiSelectFilter placeholder="All Client Types" options={filterOptions?.clientTypes ?? []} selected={clientTypeFilters} onChange={setClientTypeFilters} />
                 </div>
               )}
+              {/* Hidden even if somehow selected — showTlPicker also drives which
+                  checkbox the Filters dialog offers, so a COUNSELLING_TL (who
+                  is already scoped server-side to their own team) can never
+                  reach this control. */}
+              {selectedFilters.includes('tl') && showTlPicker && (
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Counselling TL</span>
+                  <AgentMultiSelect agents={tlsList} selected={tlFilters} onChange={setTlFilters} placeholder="All TLs" />
+                </div>
+              )}
               {selectedFilters.includes('agent') && (
                 <div className="flex flex-col gap-1">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Counsellor</span>
                   <AgentMultiSelect agents={agents} selected={agentFilters} onChange={setAgentFilters} />
+                </div>
+              )}
+              {selectedFilters.includes('leadConfirmation') && (
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Lead Confirmation</span>
+                  <MultiSelectFilter placeholder="Any" options={filterOptions?.leadConfirmations ?? []} selected={leadConfirmationFilters} onChange={setLeadConfirmationFilters} />
                 </div>
               )}
               {selectedFilters.includes('feedback') && (
@@ -1919,7 +1967,13 @@ export default function CounsellingTLPage() {
 
           <div className="py-2 space-y-5 max-h-[60vh] overflow-y-auto pr-1">
             {FILTER_GROUPS.map(({ group, filters }) => {
-              const allChecked = filters.every((f) => dialogFilters.includes(f.key));
+              // Hide "Counselling TL" for a role that can't use it — a
+              // COUNSELLING_TL is already scoped server-side to their own
+              // team, so offering a filter that can only ever match
+              // everything would just be confusing.
+              const visible = filters.filter((f) => f.key !== 'tl' || showTlPicker);
+              if (visible.length === 0) return null;
+              const allChecked = visible.every((f) => dialogFilters.includes(f.key));
               return (
                 <div key={group}>
                   <div className="flex items-center justify-between mb-2">
@@ -1929,9 +1983,9 @@ export default function CounsellingTLPage() {
                     <button
                       onClick={() => {
                         if (allChecked) {
-                          setDialogFilters((prev) => prev.filter((k) => !filters.map((f) => f.key).includes(k)));
+                          setDialogFilters((prev) => prev.filter((k) => !visible.map((f) => f.key).includes(k)));
                         } else {
-                          setDialogFilters((prev) => Array.from(new Set([...prev, ...filters.map((f) => f.key)])));
+                          setDialogFilters((prev) => Array.from(new Set([...prev, ...visible.map((f) => f.key)])));
                         }
                       }}
                       className="text-[10px] text-primary hover:underline"
@@ -1940,7 +1994,7 @@ export default function CounsellingTLPage() {
                     </button>
                   </div>
                   <div className="grid grid-cols-2 gap-2">
-                    {filters.map((f) => {
+                    {visible.map((f) => {
                       const checked = dialogFilters.includes(f.key);
                       return (
                         <label

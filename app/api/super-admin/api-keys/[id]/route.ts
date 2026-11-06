@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { logActivity } from '@/lib/permissions';
+import { logActivity, isRootLevel } from '@/lib/permissions';
 import { isActionUnlocked } from '@/lib/security-pin';
 import { PIN_GATED_ACTIONS } from '@/lib/pin-gated-actions';
 
@@ -12,7 +12,7 @@ import { PIN_GATED_ACTIONS } from '@/lib/pin-gated-actions';
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== 'SUPER_ADMIN') {
+    if (!session || !isRootLevel(session.user.role)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     if (!(await isActionUnlocked(session.user.id, PIN_GATED_ACTIONS.API_KEYS))) {

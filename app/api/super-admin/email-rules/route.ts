@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { EmailAudience, EmailFrequency, EmailReportType, Prisma } from '@prisma/client';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { logActivity } from '@/lib/permissions';
+import { logActivity, isRootLevel } from '@/lib/permissions';
 import { isEmailConfigured, cleanAddresses } from '@/lib/email';
 import { isActionUnlocked } from '@/lib/security-pin';
 import { PIN_GATED_ACTIONS } from '@/lib/pin-gated-actions';
@@ -55,7 +55,7 @@ const ruleSchema = z.object({
 async function requireSuperAdmin() {
   const session = await getServerSession(authOptions);
   if (!session) return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
-  if (session.user.role !== 'SUPER_ADMIN') {
+  if (!isRootLevel(session.user.role)) {
     return { error: NextResponse.json({ error: 'Only a Super Admin can manage email automation' }, { status: 403 }) };
   }
   if (!(await isActionUnlocked(session.user.id, PIN_GATED_ACTIONS.EMAIL_AUTOMATION))) {

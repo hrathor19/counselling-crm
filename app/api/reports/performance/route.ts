@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { istStartOfDay, istEndOfDay, istDayKey, istShiftDays } from '@/lib/ist-time';
-import { hasPermission } from '@/lib/permissions';
+import { hasPermission, isRootLevel } from '@/lib/permissions';
 import { Feature } from '@prisma/client';
 
 export async function GET(req: NextRequest) {
@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
     where: {
       isActive: true,
       ...(session.user.role === 'COUNSELLING_TL' ? { teamLeadId: session.user.id } : {}),
-      ...(teamId && session.user.role === 'SUPER_ADMIN' ? { id: teamId } : {}),
+      ...(teamId && isRootLevel(session.user.role) ? { id: teamId } : {}),
     },
     include: {
       teamLead: { select: { id: true, name: true } },

@@ -596,7 +596,7 @@ export default function DashboardPage() {
   const { data: agentsList } = useQuery<AgentUser[]>({
     queryKey: ['agents-list'],
     queryFn: () => fetch('/api/users?role=COUNSELLING_AGENT').then(async (r) => { const d = await r.json(); return Array.isArray(d) ? d : []; }),
-    enabled: role === 'SUPER_ADMIN' || role === 'REPORTS',
+    enabled: role === 'SUPER_ADMIN' || role === 'ROOT_USER' || role === 'REPORTS',
     staleTime: 10 * 60 * 1000,
   });
 
@@ -700,11 +700,11 @@ export default function DashboardPage() {
   const feedbackBreakdown = s.feedbackBreakdown ?? [];
   const topAgents = s.topAgents ?? [];
 
-  const showAgentFilter = role === 'SUPER_ADMIN' || role === 'REPORTS';
+  const showAgentFilter = role === 'SUPER_ADMIN' || role === 'ROOT_USER' || role === 'REPORTS';
   // Counselling Agents shouldn't see or filter by lead-source info they have
   // no use for.
   const showLeadType    = role !== 'COUNSELLING_AGENT';
-  const showTopAgents = (role === 'SUPER_ADMIN' || role === 'COUNSELLING_TL') && topAgents.length > 0;
+  const showTopAgents = (role === 'SUPER_ADMIN' || role === 'ROOT_USER' || role === 'COUNSELLING_TL') && topAgents.length > 0;
   const showFeedback = feedbackBreakdown.length > 0;
 
   const hasActiveFilters = Object.values(appliedFilters).some((v) => v.length > 0);

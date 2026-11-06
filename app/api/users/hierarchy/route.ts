@@ -2,17 +2,19 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { isRootLevel } from '@/lib/permissions';
 
 export async function GET() {
   try {
   const session = await getServerSession(authOptions);
-  if (!session || (session.user.role !== 'SUPER_ADMIN' && session.user.role !== 'REPORTS')) {
+  if (!session || (!isRootLevel(session.user.role) && session.user.role !== 'REPORTS')) {
     return NextResponse.json({ success: false, error: 'Unauthorized', code: 'UNAUTHORIZED' }, { status: 401 });
   }
 
   const [sa, opsGroups, teams] = await Promise.all([
+    // Whichever admin-tier account exists — see lib/permissions.ts isRootLevel().
     prisma.user.findFirst({
-      where: { role: 'SUPER_ADMIN' },
+      where: { role: { in: ['SUPER_ADMIN', 'ROOT_USER'] } },
       select: { id: true, name: true, email: true, employeeCode: true, isActive: true, phone: true, joiningDate: true },
     }),
     prisma.operationsGroup.findMany({

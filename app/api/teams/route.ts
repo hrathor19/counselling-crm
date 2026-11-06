@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { z } from 'zod';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { logActivity } from '@/lib/permissions';
+import { logActivity, isRootLevel } from '@/lib/permissions';
 
 const createTeamSchema = z.object({
   name: z.string().min(2),
@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
   const where =
     session.user.role === 'COUNSELLING_TL' || myTeam
       ? { teamLeadId: session.user.id }
-      : session.user.role === 'SUPER_ADMIN'
+      : isRootLevel(session.user.role)
       ? {}
       : { teamLeadId: session.user.id };
 
@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== 'SUPER_ADMIN') {
+  if (!session || !isRootLevel(session.user.role)) {
     return NextResponse.json({ success: false, error: 'Unauthorized', code: 'UNAUTHORIZED' }, { status: 401 });
   }
 

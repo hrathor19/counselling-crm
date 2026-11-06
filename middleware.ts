@@ -2,29 +2,32 @@ import { withAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
 import type { Role } from '@prisma/client';
 
-// Role-based route access map — more specific routes take precedence over broader ones
+// Role-based route access map — more specific routes take precedence over broader ones.
+// ROOT_USER is added alongside every SUPER_ADMIN entry below: it is the same
+// access level (see lib/permissions.ts isRootLevel()), just its own role so
+// Manage Permissions can hold a masking preference independent of SUPER_ADMIN's.
 const ROLE_ROUTES: Record<string, Role[]> = {
-  '/dashboard/super-admin': ['SUPER_ADMIN'],
-  '/dashboard/operations': ['SUPER_ADMIN', 'OPERATIONS'],
-  '/dashboard/reports': ['SUPER_ADMIN', 'REPORTS'],
+  '/dashboard/super-admin': ['SUPER_ADMIN', 'ROOT_USER'],
+  '/dashboard/operations': ['SUPER_ADMIN', 'ROOT_USER', 'OPERATIONS'],
+  '/dashboard/reports': ['SUPER_ADMIN', 'ROOT_USER', 'REPORTS'],
   // More specific than '/dashboard/reports' above — TLs (and REPORTS/SA) can
   // view Analytics even though the broader /dashboard/reports/* tree
   // (Lead Approvals, Org Hierarchy) stays REPORTS/SUPER_ADMIN only.
-  '/dashboard/reports/analytics': ['SUPER_ADMIN', 'COUNSELLING_TL', 'REPORTS'],
+  '/dashboard/reports/analytics': ['SUPER_ADMIN', 'ROOT_USER', 'COUNSELLING_TL', 'REPORTS'],
   // REPORTS included so the Manage Permissions "Assign Leads" toggle can
   // actually grant this page — REPORTS gets the same global TL/agent picker
   // SUPER_ADMIN sees (enforced client + API side by the ASSIGN_LEADS feature
   // flag). The more specific /team rule below still keeps the TL's own-team
   // view TL/SA-only.
-  '/dashboard/counselling-tl': ['SUPER_ADMIN', 'REPORTS', 'COUNSELLING_TL'],
-  '/dashboard/counselling-tl/team': ['SUPER_ADMIN', 'COUNSELLING_TL'],
-  '/dashboard/counselling-agent': ['SUPER_ADMIN', 'COUNSELLING_AGENT'],
-  '/dashboard/counselling-agent/due-today': ['SUPER_ADMIN', 'COUNSELLING_AGENT'],
-  '/dashboard/counselling-agent/scheduled-calls': ['SUPER_ADMIN', 'REPORTS', 'COUNSELLING_TL', 'COUNSELLING_AGENT'],
+  '/dashboard/counselling-tl': ['SUPER_ADMIN', 'ROOT_USER', 'REPORTS', 'COUNSELLING_TL'],
+  '/dashboard/counselling-tl/team': ['SUPER_ADMIN', 'ROOT_USER', 'COUNSELLING_TL'],
+  '/dashboard/counselling-agent': ['SUPER_ADMIN', 'ROOT_USER', 'COUNSELLING_AGENT'],
+  '/dashboard/counselling-agent/due-today': ['SUPER_ADMIN', 'ROOT_USER', 'COUNSELLING_AGENT'],
+  '/dashboard/counselling-agent/scheduled-calls': ['SUPER_ADMIN', 'ROOT_USER', 'REPORTS', 'COUNSELLING_TL', 'COUNSELLING_AGENT'],
   // More specific than the blanket '/dashboard/super-admin' rule above —
   // REPORTS can reach this one page if granted APPROVE_RECEIPTS via the
   // permission matrix (enforced client + API side by that feature flag).
-  '/dashboard/super-admin/receipt-approvals': ['SUPER_ADMIN', 'REPORTS'],
+  '/dashboard/super-admin/receipt-approvals': ['SUPER_ADMIN', 'ROOT_USER', 'REPORTS'],
   // Same exception, same reasoning: the Reports & Performance page lives under
   // /dashboard/super-admin/* but only reads /api/analytics/*, which gate on
   // VIEW_REPORTS — a REPORTS default. Without this more-specific rule the
@@ -32,22 +35,22 @@ const ROLE_ROUTES: Record<string, Role[]> = {
   // COUNSELLING_TL included as well: /api/analytics/summary and
   // /api/analytics/breakdown pin a TL to their own team (ignoring any teamId
   // in the request), so this page shows them their team's stats only.
-  '/dashboard/super-admin/performance': ['SUPER_ADMIN', 'REPORTS', 'COUNSELLING_TL'],
+  '/dashboard/super-admin/performance': ['SUPER_ADMIN', 'ROOT_USER', 'REPORTS', 'COUNSELLING_TL'],
   // Same exception as above: the page sits under /dashboard/super-admin/* but is
   // meant for everyone the targets concern. /api/kpi/targets decides what each
   // role may see and allows only a Super Admin to change anything, so the page
   // itself is safe to open to agents and TLs.
-  '/dashboard/super-admin/kpi': ['SUPER_ADMIN', 'REPORTS', 'COUNSELLING_TL', 'COUNSELLING_AGENT'],
+  '/dashboard/super-admin/kpi': ['SUPER_ADMIN', 'ROOT_USER', 'REPORTS', 'COUNSELLING_TL', 'COUNSELLING_AGENT'],
   // Same exception again: the Reports dashboards live under
   // /dashboard/super-admin/* but every role has a version of them. The API
   // decides the scope from the session, so opening the page cannot reveal
   // anyone else's numbers.
-  '/dashboard/super-admin/reports': ['SUPER_ADMIN', 'REPORTS', 'COUNSELLING_TL', 'COUNSELLING_AGENT'],
+  '/dashboard/super-admin/reports': ['SUPER_ADMIN', 'ROOT_USER', 'REPORTS', 'COUNSELLING_TL', 'COUNSELLING_AGENT'],
   // Same exception again: Call Analysis sits under /dashboard/super-admin/*
   // but reads only /api/call-analysis, which resolves the viewer's scope from
   // the session. Agents are included and see only their own calls — the API
   // pins them server-side, so reaching the page cannot widen that.
-  '/dashboard/super-admin/call-analysis': ['SUPER_ADMIN', 'REPORTS', 'COUNSELLING_TL', 'COUNSELLING_AGENT'],
+  '/dashboard/super-admin/call-analysis': ['SUPER_ADMIN', 'ROOT_USER', 'REPORTS', 'COUNSELLING_TL', 'COUNSELLING_AGENT'],
 };
 
 export default withAuth(

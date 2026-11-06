@@ -5,7 +5,7 @@ import bcrypt from 'bcryptjs';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { Role, WorkType } from '@prisma/client';
-import { logActivity } from '@/lib/permissions';
+import { logActivity, isRootLevel } from '@/lib/permissions';
 import { moveAgentToTeamLead, moveAgentToTeam } from '@/lib/team-sync';
 import { unassignLeads } from '@/lib/lead-unassign';
 
@@ -67,7 +67,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   // admins, the reports role, the user themselves, or their own TL/manager.
   const viewer = session.user;
   const canView =
-    ['SUPER_ADMIN', 'REPORTS'].includes(viewer.role) ||
+    isRootLevel(viewer.role) || viewer.role === 'REPORTS' ||
     user.id === viewer.id ||
     user.managerId === viewer.id ||
     user.managedById === viewer.id ||
@@ -88,7 +88,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   try {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== 'SUPER_ADMIN') {
+  if (!session || !isRootLevel(session.user.role)) {
     return NextResponse.json({ success: false, error: 'Unauthorized', code: 'UNAUTHORIZED' }, { status: 401 });
   }
 
@@ -203,7 +203,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || session.user.role !== 'SUPER_ADMIN') {
+    if (!session || !isRootLevel(session.user.role)) {
       return NextResponse.json({ success: false, error: 'Unauthorized', code: 'UNAUTHORIZED' }, { status: 401 });
     }
 

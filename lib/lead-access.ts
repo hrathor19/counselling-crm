@@ -53,7 +53,9 @@ export function getLeadWhereClause(user: SessionUser): Prisma.LeadWhereInput {
       return { uploadedById: user.id };
 
     case 'SUPER_ADMIN':
-      // SA sees everything, no restriction
+    case 'ROOT_USER':
+      // Both admin-tier roles see everything, no restriction — see
+      // lib/permissions.ts isRootLevel() for why they are two roles at all.
       return {};
 
     default:

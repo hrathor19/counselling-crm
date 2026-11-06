@@ -4,7 +4,7 @@ import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { generateEmployeeCode, logActivity } from '@/lib/permissions';
+import { generateEmployeeCode, logActivity, isRootLevel } from '@/lib/permissions';
 import { UserStatus } from '@prisma/client';
 
 const requestAgentSchema = z.object({
@@ -54,7 +54,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
   const session = await getServerSession(authOptions);
-  if (!session || !['SUPER_ADMIN', 'COUNSELLING_TL'].includes(session.user.role)) {
+  if (!session || !['SUPER_ADMIN', 'ROOT_USER', 'COUNSELLING_TL'].includes(session.user.role)) {
     return NextResponse.json({ success: false, error: 'Unauthorized', code: 'UNAUTHORIZED' }, { status: 401 });
   }
 
@@ -74,7 +74,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return NextResponse.json({ success: false, error: 'Email already in use', code: 'DUPLICATE_EMAIL' }, { status: 409 });
 
-  const isSA = session.user.role === 'SUPER_ADMIN';
+  const isSA = isRootLevel(session.user.role);
   const tempPassword = isSA ? 'Password@123' : Math.random().toString(36).slice(-8);
   const hashed = await bcrypt.hash(tempPassword, 12);
   const employeeCode = await generateEmployeeCode();

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { Prisma } from '@prisma/client';
 import { authOptions } from '@/lib/auth';
+import { isRootLevel } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 import { getLeadWhereClause } from '@/lib/lead-access';
 import { nonFeedbackQuerySchema, buildNonFeedbackFilters, hasAnyFilter } from '@/lib/lead-query-filters';
@@ -18,7 +19,7 @@ export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ success: false, error: 'Unauthorized', code: 'UNAUTHORIZED' }, { status: 401 });
-    if (session.user.role !== 'SUPER_ADMIN') {
+    if (!isRootLevel(session.user.role)) {
       return NextResponse.json({ success: false, error: 'Only Super Admin can use this tool', code: 'FORBIDDEN' }, { status: 403 });
     }
     if (!(await isActionUnlocked(session.user.id, PIN_GATED_ACTIONS.BULK_DELETE_LEADS))) {

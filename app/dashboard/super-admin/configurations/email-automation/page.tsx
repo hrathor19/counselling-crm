@@ -75,7 +75,7 @@ const MANAGEMENT_REPORTS: Rule['reportType'][] = [
   'ALL_REPORTS',
 ];
 
-const ROLES = ['SUPER_ADMIN', 'REPORTS', 'OPERATIONS', 'COUNSELLING_TL'];
+const ROLES = ['SUPER_ADMIN', 'ROOT_USER', 'REPORTS', 'OPERATIONS', 'COUNSELLING_TL'];
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 const BLANK: Omit<Rule, 'id' | 'scopeTl' | 'lastRunAt'> & { id?: string } = {

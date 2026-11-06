@@ -20,6 +20,60 @@ cause and is still unfixed.
 
 ## 1. What is waiting to go out
 
+### A ROOT_USER role, identical to Super Admin  *(DDL FIRST, then code)*
+
+Himanshu asked for a new role with every Super Admin permission, so he can
+grant someone full access while controlling their Mask Data setting
+independently of every actual Super Admin's. Masking is stored per ROLE
+(`Permission.role_feature`), not per user, so one shared SUPER_ADMIN role could
+never give two people different masked/unmasked states — hence a second role
+rather than just making the person a Super Admin.
+
+1. `prisma/migrations/20261106000000_add_root_user_role` — one statement,
+   `ALTER TYPE "Role" ADD VALUE IF NOT EXISTS 'ROOT_USER'`. Safe inside the
+   normal transactional migration runner on Postgres 12+ (servers are 17 local
+   / 18.6 old prod) because nothing in the same file *uses* the new value —
+   see [[prod-migration-procedure]] for why that distinction matters. Must
+   still land before the code: the regenerated Prisma client is what makes
+   `Role.ROOT_USER` a valid TypeScript value, and `npx prisma generate` must
+   run on the server after this migration and before the build.
+2. Then the code — `git diff --stat` touches ~65 files, but it is one
+   mechanical idea repeated everywhere: `lib/permissions.ts` exports
+   `isRootLevel(role)` (`role === SUPER_ADMIN || role === ROOT_USER`), and
+   every place that used to gate on `role === 'SUPER_ADMIN'` alone — API route
+   guards, `middleware.ts`'s `ROLE_ROUTES`, `components/shared/sidebar.tsx`'s
+   `roles:` arrays, `lib/lead-access.ts`'s visibility switch, the Manage Users
+   role dropdown, the Manage Permissions grid — now also accepts ROOT_USER.
+   `getRolePermissions`/`getAllPermissions` give ROOT_USER every feature
+   except masking, exactly like Super Admin, and each role's masking reads
+   its own DB row so the two can disagree.
+3. **Deliberate scope decision, not asked for explicitly but implied by "all
+   the access as super admin":** ROOT_USER also gets Bulk Delete Leads
+   (irreversible, previously hard-restricted to literal SUPER_ADMIN) and can
+   open/edit Manage Permissions itself. Worth Himanshu's explicit confirmation
+   before this goes live, since it means a Root User could delete leads or
+   change anyone's permissions, including a Super Admin's.
+
+No migration needed on the new server beyond this one `ALTER TYPE` — nothing
+else in this change touches the database. Verified locally end to end with a
+throwaway ROOT_USER account (since deleted): page access, `/api/leads`
+visibility (1016/1016, unrestricted), the Manage Permissions grid rendering a
+Root User column with its own Mask Data toggle, and that toggling one role's
+masking leaves the other's untouched — then confirmed the test account and its
+one stray `Permission` row were fully removed afterward. `tsc --noEmit` clean.
+
+### Counselling TL and Lead Confirmation filters on Assign Leads  *(code only, no DDL)*
+
+Two more entries in the Assign Leads page's Filters dialog, both reading
+server-side filter logic (`tlId`, `leadConfirmation`) that `/api/leads` already
+supported for All Leads — no new API work. Counselling TL is hidden from the
+dialog for a COUNSELLING_TL viewer, who is already scoped to their own team
+server-side; Lead Confirmation is open to everyone. Wired into all three
+places a filter has to live on this page to stay consistent — the main list
+query, the "Select all filtered" / "Select range" bulk-selection path, and the
+removable filter chips — since this page's "Select all" has broken before by
+drifting out of sync with what the list actually shows.
+
 *Call Analysis shipped to the OLD server (13.206.157.201) on 2026-10-26 as
 `24ea508`. **The new server, calling-crm.kollegeapply.com, still has none of
 it** — see §1a for exactly what that box needs.*

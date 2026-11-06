@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { z } from 'zod';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { logActivity } from '@/lib/permissions';
+import { logActivity, isRootLevel } from '@/lib/permissions';
 import { isActionUnlocked } from '@/lib/security-pin';
 import { PIN_GATED_ACTIONS } from '@/lib/pin-gated-actions';
 import { PRIORITY_SETTING_ID, eligibleAgents, loadPriorityRule } from '@/lib/priority-assignment';
@@ -17,7 +17,7 @@ import { PRIORITY_SETTING_ID, eligibleAgents, loadPriorityRule } from '@/lib/pri
 
 async function guard(action: 'read' | 'write') {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== 'SUPER_ADMIN') {
+  if (!session || !isRootLevel(session.user.role)) {
     return { error: NextResponse.json({ error: 'Forbidden' }, { status: 403 }) };
   }
   // Reading is gated too — the page shows exactly which agents are receiving

@@ -266,7 +266,7 @@ export default function KpiPage() {
 
   // Only these roles get the export. An agent sees their own row on this page
   // and has no reason to pull the whole team's scoreboard out of the CRM.
-  const canExport = ['SUPER_ADMIN', 'REPORTS', 'COUNSELLING_TL'].includes(session?.user?.role ?? '');
+  const canExport = ['SUPER_ADMIN', 'ROOT_USER', 'REPORTS', 'COUNSELLING_TL'].includes(session?.user?.role ?? '');
 
   // The points weighting is management configuration, so agents do not see it.
   // The line drawn here is config versus outcome: an agent still sees their own

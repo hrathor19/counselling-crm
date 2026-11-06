@@ -37,7 +37,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
 import { formatDate } from '@/lib/utils';
 
-const ROLES = ['SUPER_ADMIN', 'REPORTS', 'OPERATIONS', 'COUNSELLING_TL', 'COUNSELLING_AGENT'] as const;
+const ROLES = ['SUPER_ADMIN', 'ROOT_USER', 'REPORTS', 'OPERATIONS', 'COUNSELLING_TL', 'COUNSELLING_AGENT'] as const;
 const WORK_TYPES = ['WFH', 'WFO'] as const;
 
 /** Optional, but exactly 10 digits when filled — mirrors the server rule. */
@@ -102,6 +102,7 @@ interface UserRecord {
 
 const ROLE_LABELS: Record<string, string> = {
   SUPER_ADMIN: 'Super Admin',
+  ROOT_USER: 'Root User',
   REPORTS: 'Reports',
   OPERATIONS: 'Operations',
   COUNSELLING_TL: 'Counselling TL',

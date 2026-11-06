@@ -70,7 +70,7 @@ const NAV: NavEntry[] = [
     href: '/dashboard',
     label: 'Dashboard',
     icon: LayoutDashboard,
-    roles: ['SUPER_ADMIN', 'REPORTS', 'OPERATIONS', 'COUNSELLING_TL', 'COUNSELLING_AGENT'],
+    roles: ['SUPER_ADMIN', 'ROOT_USER', 'REPORTS', 'OPERATIONS', 'COUNSELLING_TL', 'COUNSELLING_AGENT'],
     exact: true,
   },
   {
@@ -78,7 +78,7 @@ const NAV: NavEntry[] = [
     href: '/dashboard/leads',
     label: 'All Leads',
     icon: List,
-    roles: ['SUPER_ADMIN', 'REPORTS', 'COUNSELLING_TL', 'COUNSELLING_AGENT'],
+    roles: ['SUPER_ADMIN', 'ROOT_USER', 'REPORTS', 'COUNSELLING_TL', 'COUNSELLING_AGENT'],
     // mirrors /api/leads GET, which allows VIEW_LEADS or VIEW_REPORTS
     features: ['VIEW_LEADS', 'VIEW_REPORTS'],
   },
@@ -90,20 +90,20 @@ const NAV: NavEntry[] = [
     // REPORTS is read-only here (page has no mark-done/cancel actions) —
     // mirrors /api/leads/scheduled-calls, which already scopes REPORTS
     // the same as SUPER_ADMIN (sees everything, no team restriction).
-    roles: ['SUPER_ADMIN', 'REPORTS', 'COUNSELLING_TL', 'COUNSELLING_AGENT'],
+    roles: ['SUPER_ADMIN', 'ROOT_USER', 'REPORTS', 'COUNSELLING_TL', 'COUNSELLING_AGENT'],
   },
   {
     type: 'group',
     key: 'manage-leads',
     label: 'Manage Leads',
     icon: ClipboardList,
-    roles: ['SUPER_ADMIN', 'OPERATIONS', 'COUNSELLING_TL', 'COUNSELLING_AGENT'],
+    roles: ['SUPER_ADMIN', 'ROOT_USER', 'OPERATIONS', 'COUNSELLING_TL', 'COUNSELLING_AGENT'],
     children: [
       {
         href: '/dashboard/operations',
         label: 'Upload Leads',
         icon: Upload,
-        roles: ['SUPER_ADMIN', 'OPERATIONS'],
+        roles: ['SUPER_ADMIN', 'ROOT_USER', 'OPERATIONS'],
         exact: true,
         features: ['UPLOAD_LEADS'],
       },
@@ -114,7 +114,7 @@ const NAV: NavEntry[] = [
         // REPORTS is included because the permission matrix's Assign Leads
         // toggle must be able to actually grant this — same page as SUPER_ADMIN
         // uses (global TL/agent picker), not the TL's own-team-only view.
-        roles: ['SUPER_ADMIN', 'REPORTS', 'COUNSELLING_TL'],
+        roles: ['SUPER_ADMIN', 'ROOT_USER', 'REPORTS', 'COUNSELLING_TL'],
         exact: true,
         features: ['ASSIGN_LEADS'],
       },
@@ -122,7 +122,7 @@ const NAV: NavEntry[] = [
         href: '/dashboard/super-admin/upload-limits',
         label: 'Upload Limits',
         icon: Gauge,
-        roles: ['SUPER_ADMIN'],
+        roles: ['SUPER_ADMIN', 'ROOT_USER'],
       },
       {
         href: '/dashboard/super-admin/bulk-delete-leads',
@@ -131,7 +131,7 @@ const NAV: NavEntry[] = [
         // Hard-restricted to SUPER_ADMIN — irreversible, so this one is not
         // exposed through the permission matrix like the other Manage Leads
         // items above.
-        roles: ['SUPER_ADMIN'],
+        roles: ['SUPER_ADMIN', 'ROOT_USER'],
         exact: true,
       },
     ],
@@ -141,7 +141,7 @@ const NAV: NavEntry[] = [
     href: '/dashboard/college-search',
     label: 'College/Course Search',
     icon: Search,
-    roles: ['SUPER_ADMIN', 'REPORTS', 'OPERATIONS', 'COUNSELLING_TL', 'COUNSELLING_AGENT'],
+    roles: ['SUPER_ADMIN', 'ROOT_USER', 'REPORTS', 'OPERATIONS', 'COUNSELLING_TL', 'COUNSELLING_AGENT'],
   },
   {
     type: 'leaf',
@@ -150,68 +150,68 @@ const NAV: NavEntry[] = [
     icon: Link2,
     // Every role, agents above all — the link is personalised per agent from
     // the session, so there is nothing here one person can see of another's.
-    roles: ['SUPER_ADMIN', 'REPORTS', 'OPERATIONS', 'COUNSELLING_TL', 'COUNSELLING_AGENT'],
+    roles: ['SUPER_ADMIN', 'ROOT_USER', 'REPORTS', 'OPERATIONS', 'COUNSELLING_TL', 'COUNSELLING_AGENT'],
   },
   {
     type: 'group',
     key: 'manage-dropdowns',
     label: 'Manage Dropdowns',
     icon: Settings2,
-    roles: ['SUPER_ADMIN'],
+    roles: ['SUPER_ADMIN', 'ROOT_USER'],
     children: [
       {
         href: '/dashboard/super-admin/feedback-options',
         label: 'Feedbacks',
         icon: MessageSquare,
-        roles: ['SUPER_ADMIN'],
+        roles: ['SUPER_ADMIN', 'ROOT_USER'],
       },
       {
         href: '/dashboard/super-admin/manage-colleges',
         label: 'Colleges',
         icon: GraduationCap,
-        roles: ['SUPER_ADMIN'],
+        roles: ['SUPER_ADMIN', 'ROOT_USER'],
       },
       {
         href: '/dashboard/super-admin/manage-lead-type',
         label: 'Lead Type',
         icon: Tag,
-        roles: ['SUPER_ADMIN'],
+        roles: ['SUPER_ADMIN', 'ROOT_USER'],
       },
       {
         href: '/dashboard/super-admin/manage-lead-origin',
         label: 'Lead Origin',
         icon: Globe2,
-        roles: ['SUPER_ADMIN'],
+        roles: ['SUPER_ADMIN', 'ROOT_USER'],
       },
       {
         href: '/dashboard/super-admin/manage-lead-confirmation',
         label: 'Lead Confirmation',
         icon: CheckSquare,
-        roles: ['SUPER_ADMIN'],
+        roles: ['SUPER_ADMIN', 'ROOT_USER'],
       },
       {
         href: '/dashboard/super-admin/manage-lead-stage',
         label: 'Lead Stage',
         icon: Layers,
-        roles: ['SUPER_ADMIN'],
+        roles: ['SUPER_ADMIN', 'ROOT_USER'],
       },
       {
         href: '/dashboard/super-admin/manage-lead-verification',
         label: 'Lead Verification',
         icon: ShieldCheck,
-        roles: ['SUPER_ADMIN'],
+        roles: ['SUPER_ADMIN', 'ROOT_USER'],
       },
       {
         href: '/dashboard/super-admin/manage-lead-codes',
         label: 'LeadCode List',
         icon: Hash,
-        roles: ['SUPER_ADMIN'],
+        roles: ['SUPER_ADMIN', 'ROOT_USER'],
       },
       {
         href: '/dashboard/super-admin/manage-data-calling-type',
         label: 'Data Calling Type',
         icon: Phone,
-        roles: ['SUPER_ADMIN'],
+        roles: ['SUPER_ADMIN', 'ROOT_USER'],
       },
     ],
   },
@@ -220,25 +220,25 @@ const NAV: NavEntry[] = [
     key: 'user-management',
     label: 'User Management',
     icon: Users,
-    roles: ['SUPER_ADMIN', 'REPORTS', 'COUNSELLING_TL', 'COUNSELLING_AGENT'],
+    roles: ['SUPER_ADMIN', 'ROOT_USER', 'REPORTS', 'COUNSELLING_TL', 'COUNSELLING_AGENT'],
     children: [
       {
         href: '/dashboard/super-admin/permissions',
         label: 'Manage Permissions',
         icon: Shield,
-        roles: ['SUPER_ADMIN'],
+        roles: ['SUPER_ADMIN', 'ROOT_USER'],
       },
       {
         href: '/dashboard/super-admin/teams',
         label: 'Manage Teams',
         icon: Users2,
-        roles: ['SUPER_ADMIN'],
+        roles: ['SUPER_ADMIN', 'ROOT_USER'],
       },
       {
         href: '/dashboard/super-admin/org-tree',
         label: 'Org Hierarchy',
         icon: GitBranch,
-        roles: ['SUPER_ADMIN'],
+        roles: ['SUPER_ADMIN', 'ROOT_USER'],
       },
       {
         href: '/dashboard/reports/hierarchy',
@@ -262,7 +262,7 @@ const NAV: NavEntry[] = [
         href: '/dashboard/super-admin',
         label: 'Manage Users',
         icon: UserCog,
-        roles: ['SUPER_ADMIN'],
+        roles: ['SUPER_ADMIN', 'ROOT_USER'],
         exact: true,
       },
     ],
@@ -275,7 +275,7 @@ const NAV: NavEntry[] = [
     // An agent sees only their own targets and a TL only their team's — both
     // read-only, enforced server-side in /api/kpi/targets. They are the people
     // the targets are about, so hiding the page from them would be perverse.
-    roles: ['SUPER_ADMIN', 'REPORTS', 'COUNSELLING_TL', 'COUNSELLING_AGENT'],
+    roles: ['SUPER_ADMIN', 'ROOT_USER', 'REPORTS', 'COUNSELLING_TL', 'COUNSELLING_AGENT'],
     exact: true,
   },
   {
@@ -289,7 +289,7 @@ const NAV: NavEntry[] = [
     // cannot widen anyone's view. Needs the matching, more-specific rule in
     // middleware.ts, or the blanket '/dashboard/super-admin' rule bounces
     // REPORTS and TLs.
-    roles: ['SUPER_ADMIN', 'REPORTS', 'COUNSELLING_TL', 'COUNSELLING_AGENT'],
+    roles: ['SUPER_ADMIN', 'ROOT_USER', 'REPORTS', 'COUNSELLING_TL', 'COUNSELLING_AGENT'],
     exact: true,
     features: ['VIEW_REPORTS'],
     // An agent sees only their own scored calls, pinned server-side, so they
@@ -304,7 +304,7 @@ const NAV: NavEntry[] = [
     // Agents are included for the group only so they can reach "Reports", which
     // shows them their own numbers. Performance Analysis below stays closed to
     // them — it is an org-wide analytics view.
-    roles: ['SUPER_ADMIN', 'REPORTS', 'COUNSELLING_TL', 'COUNSELLING_AGENT'],
+    roles: ['SUPER_ADMIN', 'ROOT_USER', 'REPORTS', 'COUNSELLING_TL', 'COUNSELLING_AGENT'],
     children: [
       {
         href: '/dashboard/super-admin/performance',
@@ -316,7 +316,7 @@ const NAV: NavEntry[] = [
         // their own team, so it doubles as their team's scorecard. Needs the
         // matching, more-specific rule in middleware.ts — the blanket
         // '/dashboard/super-admin' rule would otherwise bounce them.
-        roles: ['SUPER_ADMIN', 'REPORTS', 'COUNSELLING_TL'],
+        roles: ['SUPER_ADMIN', 'ROOT_USER', 'REPORTS', 'COUNSELLING_TL'],
         exact: true,
         features: ['VIEW_REPORTS'],
       },
@@ -328,7 +328,7 @@ const NAV: NavEntry[] = [
         // manager everyone. The scope is derived from the session server-side
         // in /api/reports/agent-performance, never from a request parameter,
         // so this entry being visible cannot widen anyone's view.
-        roles: ['SUPER_ADMIN', 'REPORTS', 'COUNSELLING_TL', 'COUNSELLING_AGENT'],
+        roles: ['SUPER_ADMIN', 'ROOT_USER', 'REPORTS', 'COUNSELLING_TL', 'COUNSELLING_AGENT'],
         exact: true,
       },
     ],
@@ -338,7 +338,7 @@ const NAV: NavEntry[] = [
     href: '/dashboard/reports/analytics',
     label: 'Analytics',
     icon: BarChart3,
-    roles: ['SUPER_ADMIN', 'COUNSELLING_TL', 'REPORTS'],
+    roles: ['SUPER_ADMIN', 'ROOT_USER', 'COUNSELLING_TL', 'REPORTS'],
     features: ['VIEW_REPORTS'],
   },
   {
@@ -346,14 +346,14 @@ const NAV: NavEntry[] = [
     href: '/dashboard/attendance',
     label: 'Agent Time BreakUp',
     icon: CalendarClock,
-    roles: ['SUPER_ADMIN', 'COUNSELLING_TL'],
+    roles: ['SUPER_ADMIN', 'ROOT_USER', 'COUNSELLING_TL'],
   },
   {
     type: 'leaf',
     href: '/dashboard/super-admin/activity-logs',
     label: 'Activity Logs',
     icon: Activity,
-    roles: ['SUPER_ADMIN'],
+    roles: ['SUPER_ADMIN', 'ROOT_USER'],
   },
   {
     type: 'leaf',
@@ -370,7 +370,7 @@ const NAV: NavEntry[] = [
     // "Reports & Performance", so they landed on a page whose own header
     // read "Lead Approvals". Merged here: REPORTS holds APPROVE_LEADS by
     // default, so their access was always correct — only the label was wrong.
-    roles: ['SUPER_ADMIN', 'REPORTS'],
+    roles: ['SUPER_ADMIN', 'ROOT_USER', 'REPORTS'],
     exact: true,
     features: ['APPROVE_LEADS'],
   },
@@ -382,7 +382,7 @@ const NAV: NavEntry[] = [
     // REPORTS included so granting APPROVE_RECEIPTS via Manage Permissions
     // actually reveals this menu — mirrors the Assign Leads / Scheduled
     // Calls fix (role decides the page shape; feature decides if it's on).
-    roles: ['SUPER_ADMIN', 'REPORTS'],
+    roles: ['SUPER_ADMIN', 'ROOT_USER', 'REPORTS'],
     exact: true,
     features: ['APPROVE_RECEIPTS'],
   },
@@ -391,19 +391,19 @@ const NAV: NavEntry[] = [
     key: 'configurations',
     label: 'Configurations',
     icon: Settings,
-    roles: ['SUPER_ADMIN'],
+    roles: ['SUPER_ADMIN', 'ROOT_USER'],
     children: [
       {
         href: '/dashboard/super-admin/configurations/api-keys',
         label: 'API Keys',
         icon: KeyRound,
-        roles: ['SUPER_ADMIN'],
+        roles: ['SUPER_ADMIN', 'ROOT_USER'],
       },
       {
         href: '/dashboard/super-admin/configurations/lead-integrations',
         label: 'Lead Integrations',
         icon: Webhook,
-        roles: ['SUPER_ADMIN'],
+        roles: ['SUPER_ADMIN', 'ROOT_USER'],
       },
       {
         // Same builder and same engine as Lead Integrations, rendered at its own
@@ -414,19 +414,19 @@ const NAV: NavEntry[] = [
         href: '/dashboard/super-admin/configurations/webhooks',
         label: 'Webhooks',
         icon: Radio,
-        roles: ['SUPER_ADMIN'],
+        roles: ['SUPER_ADMIN', 'ROOT_USER'],
       },
       {
         href: '/dashboard/super-admin/configurations/priority-settings',
         label: 'Priority Settings',
         icon: Zap,
-        roles: ['SUPER_ADMIN'],
+        roles: ['SUPER_ADMIN', 'ROOT_USER'],
       },
       {
         href: '/dashboard/super-admin/configurations/email-automation',
         label: 'Email Automation',
         icon: Mail,
-        roles: ['SUPER_ADMIN'],
+        roles: ['SUPER_ADMIN', 'ROOT_USER'],
       },
     ],
   },
@@ -435,7 +435,7 @@ const NAV: NavEntry[] = [
     href: '/dashboard/super-admin/announcements',
     label: 'Announcements',
     icon: Megaphone,
-    roles: ['SUPER_ADMIN'],
+    roles: ['SUPER_ADMIN', 'ROOT_USER'],
   },
   {
     type: 'leaf',
@@ -449,7 +449,7 @@ const NAV: NavEntry[] = [
     href: '/dashboard/profile',
     label: 'My Profile',
     icon: UserCircle,
-    roles: ['SUPER_ADMIN', 'REPORTS', 'OPERATIONS', 'COUNSELLING_TL', 'COUNSELLING_AGENT'],
+    roles: ['SUPER_ADMIN', 'ROOT_USER', 'REPORTS', 'OPERATIONS', 'COUNSELLING_TL', 'COUNSELLING_AGENT'],
   },
 ];
 

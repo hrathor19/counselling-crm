@@ -8,7 +8,7 @@ import { logActivity } from '@/lib/permissions';
 import { pushLeadToIntegrations } from '@/lib/lead-integration-engine';
 
 // Referrals are captured by counsellors while talking to the lead
-const REFERRAL_ROLES = ['SUPER_ADMIN', 'COUNSELLING_TL', 'COUNSELLING_AGENT'];
+const REFERRAL_ROLES = ['SUPER_ADMIN', 'ROOT_USER', 'COUNSELLING_TL', 'COUNSELLING_AGENT'];
 
 const referralSchema = z.object({
   name: z.string().trim().min(2, 'Name must be at least 2 characters').max(200),

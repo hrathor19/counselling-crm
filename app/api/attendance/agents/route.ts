@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { isRootLevel } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 
 export async function GET() {
@@ -8,7 +9,7 @@ export async function GET() {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    if (session.user.role === 'SUPER_ADMIN') {
+    if (isRootLevel(session.user.role)) {
       const users = await prisma.user.findMany({
         where: { role: { in: ['COUNSELLING_AGENT', 'COUNSELLING_TL'] }, isActive: true },
         select: { id: true, name: true, role: true, workType: true },

@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { logActivity } from '@/lib/permissions';
+import { logActivity, isRootLevel } from '@/lib/permissions';
 import { getLeadWhereClause } from '@/lib/lead-access';
 import { nonFeedbackQuerySchema, buildNonFeedbackFilters, hasAnyFilter } from '@/lib/lead-query-filters';
 import { isActionUnlocked } from '@/lib/security-pin';
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ success: false, error: 'Unauthorized', code: 'UNAUTHORIZED' }, { status: 401 });
-    if (session.user.role !== 'SUPER_ADMIN') {
+    if (!isRootLevel(session.user.role)) {
       return NextResponse.json({ success: false, error: 'Only Super Admin can use this tool', code: 'FORBIDDEN' }, { status: 403 });
     }
     if (!(await isActionUnlocked(session.user.id, PIN_GATED_ACTIONS.BULK_DELETE_LEADS))) {

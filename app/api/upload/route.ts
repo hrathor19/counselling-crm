@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma';
 import { callingTypeForIngest } from '@/lib/lead-code';
 import { leadCodeError } from '@/lib/csv-parser';
 import { planPriorityAssignments } from '@/lib/priority-assignment';
-import { hasPermission } from '@/lib/permissions';
+import { hasPermission, isRootLevel } from '@/lib/permissions';
 import { buildDropdownValidationSets, isAllowedDropdownValue } from '@/lib/dropdown-validation';
 import { Feature, DropdownType } from '@prisma/client';
 
@@ -292,12 +292,12 @@ export async function GET(req: NextRequest) {
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const canUpload = await hasPermission(session.user.role, Feature.UPLOAD_LEADS);
-    if (!canUpload && session.user.role !== 'SUPER_ADMIN') {
+    if (!canUpload && !isRootLevel(session.user.role)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const where =
-      session.user.role === 'SUPER_ADMIN' ? {} : { uploadedById: session.user.id };
+      isRootLevel(session.user.role) ? {} : { uploadedById: session.user.id };
 
     const batches = await prisma.uploadBatch.findMany({
       where,

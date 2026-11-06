@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { isRootLevel } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 import { istStartOfDay, istEndOfDay, istStartOfToday, istDayKey, istShiftDays, toUtcSqlTimestamp } from '@/lib/ist-time';
 import { parseCsvFilterValues } from '@/lib/csv-filter-value';
@@ -166,7 +167,7 @@ export async function GET(request: Request) {
       prisma.lead.count({ where: teamWhere }),
       prisma.lead.count({ where: { ...teamWhere, feedbacks: { some: {} } } }),
       prisma.lead.count({ where: { ...teamWhere, feedbacks: { none: {} } } }),
-      role === 'SUPER_ADMIN' || role === 'REPORTS' || role === 'COUNSELLING_TL'
+      isRootLevel(role) || role === 'REPORTS' || role === 'COUNSELLING_TL'
         ? prisma.lead.count({ where: { ...mainWhere, assignedToId: null } })
         : Promise.resolve(0),
       role === 'COUNSELLING_TL' || role === 'COUNSELLING_AGENT'

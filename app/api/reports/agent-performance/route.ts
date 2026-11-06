@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { authOptions } from '@/lib/auth';
+import { isRootLevel } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 import { buildAgentReport, buildFeedbackBreakdown, buildCollegeBreakdown, summariseAgentRows, ReportRange } from '@/lib/reports';
 import { KPI_PERIODS, computeKpiActual } from '@/lib/kpi';
@@ -83,7 +84,7 @@ export async function GET(req: NextRequest) {
       isActive: true,
       OR: [{ managedById: session.user.id }, { team: { teamLeadId: session.user.id } }],
     };
-  } else if (role === 'SUPER_ADMIN' || role === 'REPORTS') {
+  } else if (isRootLevel(role) || role === 'REPORTS') {
     scope = { role: 'COUNSELLING_AGENT', isActive: true };
   } else {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });

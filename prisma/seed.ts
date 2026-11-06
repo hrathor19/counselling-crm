@@ -21,6 +21,9 @@ const ALL_FEATURES: Feature[] = [
 // bring a fresh environment up masking the wrong people.
 const DEFAULT_PERMISSIONS: Record<Role, Feature[]> = {
   SUPER_ADMIN: ALL_FEATURES,
+  // Same access level as Super Admin — see lib/permissions.ts isRootLevel().
+  // No Root User is seeded below; create one from Manage Users once needed.
+  ROOT_USER: ALL_FEATURES,
   REPORTS: [Feature.VIEW_REPORTS, Feature.APPROVE_LEADS, Feature.DOWNLOAD_DATA],
   OPERATIONS: [Feature.UPLOAD_LEADS, Feature.MASK_UNMASK_DATA],
   COUNSELLING_TL: [Feature.VIEW_LEADS, Feature.ASSIGN_LEADS, Feature.MASK_UNMASK_DATA],

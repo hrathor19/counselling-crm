@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { isRootLevel } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 import { closeStaleAttendanceRecords, getAttendanceDateString, summarizeAttendance } from '@/lib/attendance';
 
@@ -9,7 +10,7 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || !['SUPER_ADMIN', 'COUNSELLING_TL'].includes(session.user.role)) {
+    if (!session || !['SUPER_ADMIN', 'ROOT_USER', 'COUNSELLING_TL'].includes(session.user.role)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -27,7 +28,7 @@ export async function GET(req: NextRequest) {
     // Resolve which users this viewer is allowed to see, then narrow by the
     // requested filter (silently dropping any id outside that scope).
     let eligibleIds: string[];
-    if (session.user.role === 'SUPER_ADMIN') {
+    if (isRootLevel(session.user.role)) {
       const users = await prisma.user.findMany({
         where: {
           role: { in: ['COUNSELLING_AGENT', 'COUNSELLING_TL'] },

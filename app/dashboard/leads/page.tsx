@@ -508,8 +508,8 @@ export default function AllLeadsPage() {
 
   // ── TLs / Agents ───────────────────────────────────────────────────────────
 
-  const showTlFilter    = role === 'SUPER_ADMIN' || role === 'REPORTS';
-  const showAgentFilter = role === 'SUPER_ADMIN' || role === 'REPORTS' || role === 'COUNSELLING_TL';
+  const showTlFilter    = role === 'SUPER_ADMIN' || role === 'ROOT_USER' || role === 'REPORTS';
+  const showAgentFilter = role === 'SUPER_ADMIN' || role === 'ROOT_USER' || role === 'REPORTS' || role === 'COUNSELLING_TL';
   // Counselling Agents shouldn't see lead-source info they have no use for —
   // keep it out of the column, the filter picker, and the filter bar itself.
   const showLeadType    = role !== 'COUNSELLING_AGENT';

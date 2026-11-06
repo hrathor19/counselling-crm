@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { z } from 'zod';
 import { authOptions } from '@/lib/auth';
+import { isRootLevel } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 
 const createSchema = z.object({
@@ -19,7 +20,7 @@ export async function GET(req: NextRequest) {
   const all = searchParams.get('all') === '1'; // SA-only: fetch inactive too
 
   try {
-    const isSA = session.user.role === 'SUPER_ADMIN';
+    const isSA = isRootLevel(session.user.role);
 
     const announcements = await prisma.announcement.findMany({
       where: isSA && all ? {} : { isActive: true },
@@ -43,7 +44,7 @@ export async function GET(req: NextRequest) {
 // POST — create announcement (SA only)
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== 'SUPER_ADMIN') {
+  if (!session || !isRootLevel(session.user.role)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 

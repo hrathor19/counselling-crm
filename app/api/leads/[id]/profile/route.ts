@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { canAccessLead } from '@/lib/lead-access';
 
 // Profiles are filled in by counsellors — reports/operations only view leads.
-const PROFILE_EDIT_ROLES = ['SUPER_ADMIN', 'COUNSELLING_TL', 'COUNSELLING_AGENT'];
+const PROFILE_EDIT_ROLES = ['SUPER_ADMIN', 'ROOT_USER', 'COUNSELLING_TL', 'COUNSELLING_AGENT'];
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
   try {

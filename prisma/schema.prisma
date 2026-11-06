@@ -11,6 +11,14 @@ datasource db {
 
 enum Role {
   SUPER_ADMIN
+  /// Full access, identical to SUPER_ADMIN everywhere in the app — see
+  /// lib/permissions.ts `isRootLevel()`, which is the one place that decides
+  /// it. Exists as its own role, rather than just making the person a Super
+  /// Admin, so Manage Permissions can hold a masking preference for them
+  /// independent of every other Super Admin's — masking is stored per ROLE,
+  /// not per user, so without a separate role every Super Admin would be
+  /// forced to share one masked/unmasked setting.
+  ROOT_USER
   REPORTS
   OPERATIONS
   COUNSELLING_TL

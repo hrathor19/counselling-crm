@@ -38,6 +38,7 @@ function getInitials(name: string) {
 
 const ROLE_LABELS: Record<string, string> = {
   SUPER_ADMIN: 'Super Admin',
+  ROOT_USER: 'Root User',
   REPORTS: 'Reports Team',
   OPERATIONS: 'Operations Team',
   COUNSELLING_TL: 'Counselling Team Lead',
@@ -621,8 +622,8 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
-          {/* Security PIN card — Super Admin only */}
-          {user.role === 'SUPER_ADMIN' && (
+          {/* Security PIN card — Super Admin and Root User only */}
+          {(user.role === 'SUPER_ADMIN' || user.role === 'ROOT_USER') && (
             <Card id="security-pin" className="rounded-2xl border-0 shadow-sm scroll-mt-4">
               <CardHeader className="px-5 pb-3 pt-5">
                 <div className="flex items-center gap-3">

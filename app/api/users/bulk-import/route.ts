@@ -5,7 +5,7 @@ import bcrypt from 'bcryptjs';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { Role, UserStatus } from '@prisma/client';
-import { generateEmployeeCode, logActivity } from '@/lib/permissions';
+import { generateEmployeeCode, logActivity, isRootLevel } from '@/lib/permissions';
 
 const userRowSchema = z.object({
   name: z.string().min(2),
@@ -23,7 +23,7 @@ const bulkSchema = z.object({
 export async function POST(req: NextRequest) {
   try {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== 'SUPER_ADMIN') {
+  if (!session || !isRootLevel(session.user.role)) {
     return NextResponse.json({ success: false, error: 'Unauthorized', code: 'UNAUTHORIZED' }, { status: 401 });
   }
 

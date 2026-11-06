@@ -5,7 +5,7 @@ import bcrypt from 'bcryptjs';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { Role, UserStatus, WorkType } from '@prisma/client';
-import { generateEmployeeCode, logActivity } from '@/lib/permissions';
+import { generateEmployeeCode, logActivity, isRootLevel } from '@/lib/permissions';
 import { sendWelcomeEmail } from '@/lib/welcome-email';
 
 // Optional, but must be a real 10-digit number when provided. An empty string
@@ -91,9 +91,9 @@ export async function GET(req: NextRequest) {
   }
 
   // REPORTS is read-only but needs this list for TL/agent filter dropdowns
-  // on the dashboard and All Leads pages — same query path as SUPER_ADMIN.
-  // All other non-SA roles: forbidden.
-  if (session.user.role !== Role.SUPER_ADMIN && session.user.role !== Role.REPORTS) {
+  // on the dashboard and All Leads pages — same query path as the admin-tier
+  // roles. All other non-admin roles: forbidden.
+  if (!isRootLevel(session.user.role) && session.user.role !== Role.REPORTS) {
     return NextResponse.json({ success: false, error: 'Unauthorized', code: 'UNAUTHORIZED' }, { status: 401 });
   }
 
@@ -127,7 +127,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== 'SUPER_ADMIN') {
+  if (!session || !isRootLevel(session.user.role)) {
     return NextResponse.json({ success: false, error: 'Unauthorized', code: 'UNAUTHORIZED' }, { status: 401 });
   }
 

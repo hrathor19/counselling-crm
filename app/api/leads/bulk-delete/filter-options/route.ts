@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { isRootLevel } from '@/lib/permissions';
 import { prisma } from '@/lib/prisma';
 
 // Distinct filter values for the Bulk Delete Leads tool's dropdowns. Unlike
@@ -16,7 +17,7 @@ export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    if (session.user.role !== 'SUPER_ADMIN') {
+    if (!isRootLevel(session.user.role)) {
       return NextResponse.json({ error: 'Only Super Admin can use this tool' }, { status: 403 });
     }
 

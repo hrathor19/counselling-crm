@@ -183,12 +183,12 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       include: { uploadedBy: { select: { name: true } } },
     });
 
-    // Alert every Super Admin that a new receipt is awaiting approval —
-    // outside the request's critical path so a notification hiccup never
-    // fails the upload itself.
+    // Alert every Super Admin and Root User that a new receipt is awaiting
+    // approval — outside the request's critical path so a notification
+    // hiccup never fails the upload itself.
     const kindLabel = d.type === 'APPLICATION' ? 'Application' : 'Admission';
     prisma.user
-      .findMany({ where: { role: 'SUPER_ADMIN', isActive: true }, select: { id: true } })
+      .findMany({ where: { role: { in: ['SUPER_ADMIN', 'ROOT_USER'] }, isActive: true }, select: { id: true } })
       .then((admins) =>
         admins.length > 0
           ? prisma.notification.createMany({

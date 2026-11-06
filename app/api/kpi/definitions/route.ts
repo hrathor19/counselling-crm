@@ -5,7 +5,7 @@ import { KPI_SOURCES } from '@/lib/kpi';
 import { KpiSource, ReceiptType } from '@prisma/client';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { logActivity } from '@/lib/permissions';
+import { logActivity, isRootLevel } from '@/lib/permissions';
 
 /**
  * Create, edit and delete KPI definitions.
@@ -67,7 +67,7 @@ function configError(d: ReturnType<typeof normalise>): string | null {
 async function requireAdmin() {
   const session = await getServerSession(authOptions);
   if (!session) return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
-  if (session.user.role !== 'SUPER_ADMIN') {
+  if (!isRootLevel(session.user.role)) {
     return { error: NextResponse.json({ error: 'Only a Super Admin can change KPIs' }, { status: 403 }) };
   }
   return { session };

@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { z } from 'zod';
-import { KpiPeriod, Prisma } from '@prisma/client';
+import { KpiPeriod, Prisma, Role } from '@prisma/client';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { logActivity } from '@/lib/permissions';
+import { logActivity, isRootLevel } from '@/lib/permissions';
 import {
   KPI_SOURCES, KPI_PERIODS, computeKpiActual, kpiPeriodRange, seedDefaultKpisIfEmpty, kpiScore,
   kpiCustomRange, MAX_CUSTOM_RANGE_DAYS, isSnapshotSource,
@@ -31,7 +31,7 @@ async function agentScope(viewer: { id: string; role: string }): Promise<Prisma.
       OR: [{ managedById: viewer.id }, { team: { teamLeadId: viewer.id } }],
     };
   }
-  if (viewer.role === 'SUPER_ADMIN' || viewer.role === 'REPORTS') {
+  if (isRootLevel(viewer.role as Role) || viewer.role === 'REPORTS') {
     return { role: 'COUNSELLING_AGENT', isActive: true };
   }
   return null;
@@ -65,7 +65,7 @@ export async function GET(req: NextRequest) {
     // First visit by an admin populates the defaults so the page is never empty.
     // Guarded on "no definitions at all", so a deliberately emptied list stays
     // empty rather than regrowing.
-    if (session.user.role === 'SUPER_ADMIN') {
+    if (isRootLevel(session.user.role)) {
       await seedDefaultKpisIfEmpty(prisma, session.user.id);
     }
 
@@ -221,7 +221,7 @@ export async function GET(req: NextRequest) {
       achievement,
       maxScore,
       choices: { categories, options, leadStages: stages.map((s) => s.value) },
-      canEdit: session.user.role === 'SUPER_ADMIN',
+      canEdit: isRootLevel(session.user.role),
       lastSet: lastSet ? { at: lastSet.at.toISOString(), by: lastSet.by } : null,
     });
   } catch (err) {
@@ -246,7 +246,7 @@ const putSchema = z.object({
 export async function PUT(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  if (session.user.role !== 'SUPER_ADMIN') {
+  if (!isRootLevel(session.user.role)) {
     return NextResponse.json({ error: 'Only a Super Admin can set KPI targets' }, { status: 403 });
   }
 

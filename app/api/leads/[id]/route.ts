@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { isMaskedRole } from '@/lib/permissions';
+import { isMaskedRole, isRootLevel } from '@/lib/permissions';
 import { maskContact } from '@/lib/data-masking';
 import { getLeadWhereClause } from '@/lib/lead-access';
 
@@ -66,14 +66,14 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session || !['SUPER_ADMIN', 'REPORTS'].includes(session.user.role)) {
+    if (!session || (!isRootLevel(session.user.role) && session.user.role !== 'REPORTS')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const lead = await prisma.lead.findUnique({ where: { id: params.id } });
     if (!lead) return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
 
-    if (lead.status !== 'DISAPPROVED' && session.user.role !== 'SUPER_ADMIN') {
+    if (lead.status !== 'DISAPPROVED' && !isRootLevel(session.user.role)) {
       return NextResponse.json({ error: 'Can only delete disapproved leads' }, { status: 400 });
     }
 

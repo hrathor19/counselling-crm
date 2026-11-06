@@ -40,7 +40,8 @@ export async function resolveCallAnalysisScope(
 
   if (!(await hasPermission(user.role, Feature.VIEW_REPORTS))) return null;
 
-  // SUPER_ADMIN, REPORTS and COUNSELLING_TL see every scored call.
+  // SUPER_ADMIN, ROOT_USER, REPORTS and COUNSELLING_TL see every scored call
+  // — the first two via hasPermission's blanket yes, above.
   //
   // A TL is NOT pinned to their own team here, unlike the agent-performance
   // report. That is the current behaviour and nobody has asked to change it;
